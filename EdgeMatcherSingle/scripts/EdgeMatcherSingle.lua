@@ -29,7 +29,6 @@ local DELAY = 1000 -- ms between visualization steps for demonstration purpose
 
 -- Creating viewer
 local viewer = View.create()
-viewer:setID('viewer2D')
 
 -- Setting up graphical overlay attributes
 local textDeco = View.TextDecoration.create()
@@ -112,6 +111,7 @@ local function main()
 
   print('App finished.')
 end
+
 --The following registration is part of the global scope which runs once after startup
 --Registration of the 'main' function to the 'Engine.OnStarted' event
 Script.register('Engine.OnStarted', main)
