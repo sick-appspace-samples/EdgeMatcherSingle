@@ -43,7 +43,8 @@ decoration:setPointType('DOT')
 -- Creating edge matcher
 local matcher = Image.Matching.EdgeMatcher.create()
 matcher:setEdgeThreshold(20)
-matcher:setDownsampleFactor(2)
+local wantedDownsampleFactor = 2
+matcher:setDownsampleFactor(wantedDownsampleFactor) 
 
 --End of Global Scope-----------------------------------------------------------
 
@@ -62,6 +63,13 @@ local function teach(img)
   viewer:addShape(teachRect, decoration, nil, imageID)
   local teachRegion = teachRect:toPixelRegion(img)
 
+  -- Check if wanted downsample factor is supported by device
+  minDsf,_ = matcher:getDownsampleFactorLimits(img)
+  if (minDsf > wantedDownsampleFactor) then
+    print("Cannot use downsample factor " .. wantedDownsampleFactor .. " will use " .. minDsf .. " instead") 
+    matcher:setDownsampleFactor(minDsf)
+  end
+  
   -- Teaching
   local teachPose = matcher:teach(img, teachRegion)
 
