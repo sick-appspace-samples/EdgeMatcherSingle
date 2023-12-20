@@ -5,79 +5,72 @@ print('AppEngine Version: ' .. Engine.getVersion())
 local DELAY = 1000 -- ms between visualization steps for demonstration purpose
 
 -- Creating viewer
-local viewer = View.create('viewer2D1')
+local viewer = View.create()
 
 -- Setting up graphical overlay attributes
-local textDeco = View.TextDecoration.create()
-textDeco:setSize(30)
-textDeco:setPosition(20, 30)
+local textDeco = View.TextDecoration.create():setSize(30):setPosition(20, 30)
 
-local decoration = View.ShapeDecoration.create()
-decoration:setPointSize(5)
-decoration:setLineColor(0, 0, 230) -- Blue color scheme for "Teach" mode
-decoration:setPointType('DOT')
+local decoration = View.ShapeDecoration.create():setPointType('DOT')
+decoration:setPointSize(5):setLineColor(0, 0, 230) -- Blue color scheme for "Teach" mode
 
 -- Creating edge matcher
 local matcher = Image.Matching.EdgeMatcher.create()
 matcher:setEdgeThreshold(20)
 local wantedDownsampleFactor = 2
-matcher:setDownsampleFactor(wantedDownsampleFactor) 
+matcher:setDownsampleFactor(wantedDownsampleFactor)
 
 --End of Global Scope-----------------------------------------------------------
 
 --Start of Function and Event Scope---------------------------------------------
 
---@teach(img:Image)
+---@param img Image
 local function teach(img)
   viewer:clear()
-  local imageID = viewer:addImage(img)
+  viewer:addImage(img)
   -- Adding "Teach" text overlay
-  viewer:addText('Teach', textDeco, nil, imageID)
+  viewer:addText('Teach', textDeco)
 
   -- Defining teach region
   local teachRectCenter = Point.create(313, 242)
   local teachRect = Shape.createRectangle(teachRectCenter, 440, 370, 0)
-  viewer:addShape(teachRect, decoration, nil, imageID)
+  viewer:addShape(teachRect, decoration)
   local teachRegion = teachRect:toPixelRegion(img)
 
   -- Check if wanted downsample factor is supported by device
-  minDsf,_ = matcher:getDownsampleFactorLimits(img)
+  local minDsf,_ = matcher:getDownsampleFactorLimits(img)
   if (minDsf > wantedDownsampleFactor) then
-    print("Cannot use downsample factor " .. wantedDownsampleFactor .. " will use " .. minDsf .. " instead") 
+    print("Cannot use downsample factor " .. wantedDownsampleFactor .. " will use " .. minDsf .. " instead")
     matcher:setDownsampleFactor(minDsf)
   end
-  
+
   -- Teaching
   local teachPose = matcher:teach(img, teachRegion)
 
   -- Viewing model points overlayed over teach image
-  local modelPoints = matcher:getEdgePoints() -- Model points in model's local coord syst
+  local modelPoints = matcher:getModelPoints() -- Model points in model's local coord syst
   local teachPoints = Point.transform(modelPoints, teachPose)
-  for _, point in ipairs(teachPoints) do
-    viewer:addShape(point, decoration, nil, imageID)
-  end
+  viewer:addShape(teachPoints, decoration)
   viewer:present()
   Script.sleep(DELAY)
 end
 
---@match(img:Image, i:int)
+---@param img Image
+---@param i int
 local function match(img, i)
   viewer:clear()
-  local imageID = viewer:addImage(img)
+  viewer:addImage(img)
   -- Changing color scheme to green for "Match" mode
   decoration:setLineColor(0, 210, 0)
   decoration:setLineWidth(4)
   -- Add "Match #" text overlay
-  viewer:addText('Match ' .. i, textDeco, nil, imageID)
+  viewer:addText('Match ' .. i, textDeco)
 
   -- Matching
   local poses, _ = matcher:match(img)
 
   -- Viewing model points as overlay
   local contours = Shape.transform(matcher:getModelContours(), poses[1])
-  for _, contour in ipairs(contours) do
-    viewer:addShape(contour, decoration, nil, imageID)
-  end
+  viewer:addShape(contours, decoration)
   viewer:present()
   Script.sleep(DELAY * 2)
 end
